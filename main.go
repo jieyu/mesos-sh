@@ -15,6 +15,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -59,6 +60,7 @@ var (
 	taskPrototype          mesos.TaskInfo
 	interactive            bool
 	tty                    bool
+	quiet                  bool
 	pod                    bool
 	executorPrototype      mesos.ExecutorInfo
 	wantsExecutorResources = mesos.Resources{
@@ -78,6 +80,7 @@ func init() {
 	flag.Float64Var(&CPUs, "cpus", CPUs, "CPU resources to allocate for the remote command")
 	flag.Float64Var(&Memory, "memory", Memory, "Memory resources to allocate for the remote command")
 	flag.BoolVar(&tty, "tty", tty, "Route all container stdio, stdout, stderr communication through a TTY device")
+	flag.BoolVar(&quiet, "quiet", quiet, "Disable all logs")
 	flag.BoolVar(&pod, "pod", pod, "Launch the remote command in a mesos task-group")
 	flag.BoolVar(&interactive, "interactive", interactive, "Attach to the task's stdin, stdout, and stderr")
 
@@ -95,6 +98,16 @@ func main() {
 	if len(args) < 1 { // msh by itself prints usage
 		flag.Usage()
 		os.Exit(1)
+	}
+
+	// always disable logs in quiet mode
+	if interactive {
+		quiet = true
+	}
+
+	if quiet {
+		log.SetFlags(0)
+		log.SetOutput(ioutil.Discard)
 	}
 
 	wantsResources = mesos.Resources{
